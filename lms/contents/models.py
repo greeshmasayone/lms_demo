@@ -96,7 +96,7 @@ class QuizAttempt(DateBaseModel):
 class QuizResult(DateBaseModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name=_("User"), related_name='get_user_quiz_results')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, verbose_name=_("Quiz"), related_name='get_quiz_results')
-    total_score = models.PositiveSmallIntegerField(_("Mark Percentage"), default=0,)
+    total_score = models.PositiveSmallIntegerField(_("Total Score"), default=0,)
     user_score = models.PositiveSmallIntegerField(_("Score"), validators=[MinValueValidator(0)], null=True)
     has_passed = models.BooleanField(_("Has Passed"), default=False)
 

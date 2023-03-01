@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 from rest_framework.views import APIView
-from .serializers import TopicSerializer, QuizSerializer, QuestionsSerializer, AttemptSerializer, ChoiceSerializer,\
+from .serializers import TopicSerializer, QuizSerializer, QuestionsSerializer, AttemptSerializer, ChoiceSerializer, \
     CompletedUserSerializer
 from .models import Topic, Quiz, Question, QuizAttempt, Choices, Category, QuizResult
 
@@ -98,7 +98,6 @@ class QuestionDetail(generics.RetrieveUpdateDestroyAPIView):
 
 
 class QuizAttemptView(generics.ListCreateAPIView):
-    # serializer_class = AttemptSerializer
 
     def post(self, request, *args, **kwargs):
         quiz = get_object_or_404(Quiz, id=self.kwargs.get('quiz_id'))
@@ -119,25 +118,24 @@ class QuizAttemptView(generics.ListCreateAPIView):
                 is_right = False
                 quiz_results.append({'question': question_obj.id, 'user_choice': user_choice, 'is_correct': is_right})
             answer = Choices.objects.get(id=user_choice)
-            user_quiz, created = QuizResult.objects.get_or_create(user=user, quiz=quiz, user_score=user_score)
+            user_quiz, created = QuizAttempt.objects.get_or_create(user=user, quiz=quiz, question=question_obj)
             user_quiz.user_choice = answer
             user_quiz.is_right = is_right
-            highest_score = user_quiz.total_score
-            try:
-                percentage_value = user_score / total_mark
-                percentage = round(percentage_value * 100)
-                percentage = 100 if percentage > 100 else percentage
-            except ZeroDivisionError:
-                percentage = 0
-            if percentage > highest_score:
-                user_quiz.total_score = highest_score = percentage
-            if percentage >= quiz.pass_score:
-                user_quiz.has_passed = has_passed = True
-            else:
-                has_passed = False
             user_quiz.save()
-        data = {'quiz': quiz_results, 'current_score': user_score, 'total_mark': total_mark,
-                'highest_score': highest_score, 'has_passed': has_passed}
+        user_result, created = QuizResult.objects.get_or_create(user=user, quiz=quiz)
+        user_result.user_score = user_score
+        user_result.total_score = total_mark
+        try:
+            percentage_value = user_score / total_mark
+            percentage = round(percentage_value * 100)
+        except:
+            percentage = 0
+        if percentage > quiz.pass_score:
+            user_result.has_passed = has_passed = True
+        else:
+            user_result.has_passed = has_passed = False
+        user_result.save()
+        data = {'quiz': quiz_results, 'current_score': user_score, 'total_mark': total_mark, 'has_passed': has_passed}
         return Response(data={'status': True, 'error': None, 'data': data}, status=HTTP_200_OK)
 
 
