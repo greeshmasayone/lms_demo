@@ -104,7 +104,8 @@ class QuizAttemptView(generics.ListCreateAPIView):
         quiz = get_object_or_404(Quiz, id=self.kwargs.get('quiz_id'))
         user = self.request.user
         questions = request.data['questions']
-        user_score = total_mark = 0
+        current_score = total_mark = 0
+
         quiz_results = []
         for question in questions:
             question_obj = Question.objects.filter(id=question.get('question_id')).first()
@@ -113,7 +114,7 @@ class QuizAttemptView(generics.ListCreateAPIView):
             choice = question_obj.get_choices.filter(is_correct=True).first()
             if user_choice == choice.id:
                 is_right = True
-                user_score += question_obj.score
+                current_score += question_obj.score
                 quiz_results.append({'question': question_obj.id, 'user_choice': user_choice, 'is_correct': is_right})
             else:
                 is_right = False
@@ -124,23 +125,27 @@ class QuizAttemptView(generics.ListCreateAPIView):
             user_quiz.is_right = is_right
             user_quiz.save()
         user_result, created = QuizResult.objects.get_or_create(user=user, quiz=quiz)
-        user_result.user_score = user_score
         user_result.total_score = total_mark
         is_already_passed = user_result.has_passed
         try:
-            percentage_value = user_score / total_mark
+            percentage_value = current_score / total_mark
             percentage = round(percentage_value * 100)
         except:
             percentage = 0
-        if percentage > quiz.pass_score and is_already_passed==True:
+        if percentage >= quiz.pass_score or is_already_passed==True:
             user_result.has_passed = has_passed = True
         else:
             user_result.has_passed = has_passed = False
+        if user_result.user_score:
+            if current_score>user_result.user_score:
+                user_result.user_score=current_score
+        else:
+            user_result.user_score=current_score
         user_result.save()
-        if not is_already_passed:
+        if not is_already_passed and user_result.has_passed==True:
             user.point += quiz.points
         user.save()
-        data = {'quiz': quiz_results, 'current_score': user_score, 'total_mark': total_mark, 'has_passed': has_passed,
+        data = {'quiz': quiz_results, 'current_score': user_result.user_score, 'total_mark': total_mark, 'has_passed': has_passed,
                 'user_point': user.point}
         return Response(data={'status': True, 'error': None, 'data': data}, status=HTTP_200_OK)
 
