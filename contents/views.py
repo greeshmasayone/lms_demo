@@ -132,7 +132,7 @@ class QuizAttemptView(generics.ListCreateAPIView):
             percentage = round(percentage_value * 100)
         except:
             percentage = 0
-        if percentage > quiz.pass_score:
+        if percentage > quiz.pass_score and is_already_passed==True:
             user_result.has_passed = has_passed = True
         else:
             user_result.has_passed = has_passed = False
