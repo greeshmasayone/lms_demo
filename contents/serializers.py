@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Topic, Quiz, Question, QuizAttempt, Choices, QuizResult
-
+from usermanagement.models import User
 
 class QuizSerializer(serializers.ModelSerializer):
     class Meta:
@@ -93,3 +93,9 @@ class CompletedUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizResult
         fields = ['user_id']
+
+class UserListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = [ 'point', 'email', 'id']
