@@ -3,12 +3,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django.db.models import F, Window
+from django.db.models.functions import Rank
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 from rest_framework.views import APIView
 from .serializers import TopicSerializer, QuizSerializer, QuestionsSerializer, AttemptSerializer, ChoiceSerializer, \
-    CompletedUserSerializer
+    CompletedUserSerializer, UserListSerializer
 from .models import Topic, Quiz, Question, QuizAttempt, Choices, Category, QuizResult
 from usermanagement.models import User
+from usermanagement.serializers import DetailSerializer
 
 
 class TopicView(viewsets.ModelViewSet):
@@ -156,3 +159,18 @@ class CompletedUsersView(generics.ListAPIView):
     def get_queryset(self):
         queryset = QuizResult.objects.filter(has_passed=True)
         return queryset
+
+
+class LeaderShipBoardView(generics.ListAPIView):
+    permission_classes = [IsAuthenticated, ]
+    serializer_class = UserListSerializer
+
+    def get_queryset(self, *args, **kwargs):
+        queryset = User.objects.annotate(rank=Window(expression=Rank(), order_by=F('point').desc(), ))
+        return queryset
+
+    # queryset = User.objects.annotate(rank=Window(expression=Rank(), order_by=F('point').desc(), ))
+    #
+    # for user in queryset:
+    #   print(user.rank, user.point)
+

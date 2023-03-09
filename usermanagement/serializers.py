@@ -72,7 +72,7 @@ class DetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["first_name", "last_name", "phone_no", 'email', 'username']
+        fields = ["first_name", "last_name", "phone_no", 'email', 'username', 'point']
 
 
 class LogoutSerializer(serializers.ModelSerializer):
